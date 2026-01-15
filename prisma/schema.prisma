@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  password  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  habits    Habit[]
+  Tracking  Tracking[]
+}
+
+model Habit {
+  id        String     @id @default(uuid())
+  name      String
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  weekDays  Int[]
+  createdAt DateTime  
+  updatedAt DateTime   @updatedAt
+  Tracking  Tracking[]
+}
+
+model Tracking {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  habitId       String
+  habit         Habit    @relation(fields: [habitId], references: [id])
+  completedDate DateTime
+  checked       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
