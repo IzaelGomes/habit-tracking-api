@@ -7,13 +7,14 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  username  String     @unique
-  password  String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  habits    Habit[]
-  Tracking  Tracking[]
+  id             String           @id @default(uuid())
+  username       String           @unique
+  password       String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  habits         Habit[]
+  Tracking       Tracking[]
+  assistantThread AssistantThread?
 }
 
 model Habit {
@@ -37,4 +38,27 @@ model Tracking {
   checked       Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model AssistantThread {
+  id        String            @id @default(uuid())
+  userId    String            @unique
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AssistantMessage[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model AssistantMessage {
+  id        String          @id @default(uuid())
+  threadId  String
+  thread    AssistantThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      MessageRole
+  content   String
+  createdAt DateTime        @default(now())
 }
