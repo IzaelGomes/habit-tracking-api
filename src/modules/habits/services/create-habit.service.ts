@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { HabitsRepository } from '../repositories/habits.repository';
 import { CreateHabitDto } from '../dto/create-habit.dto';
 
 @Injectable()
 export class CreateHabitService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private habitsRepository: HabitsRepository) {}
 
   async execute(userId: string, createHabitDto: CreateHabitDto) {
     const { name, weekDays, createdAt } = createHabitDto;
@@ -18,27 +18,22 @@ export class CreateHabitService {
     // Sort weekDays for consistent storage
     const sortedWeekDays = uniqueWeekDays.sort((a, b) => a - b);
 
-    // Create habit
-    const habit = await this.prisma.habit.create({
-      data: {
-        name,
-        weekDays: sortedWeekDays,
-        userId,
-        createdAt,
-      },
-      select: {
-        id: true,
-        name: true,
-        weekDays: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const habit = await this.habitsRepository.create({
+      name,
+      weekDays: sortedWeekDays,
+      userId,
+      createdAt: createdAt ? new Date(createdAt) : undefined,
     });
 
     return {
       message: 'Habit created successfully',
-      habit,
+      habit: {
+        id: habit.id,
+        name: habit.name,
+        weekDays: habit.weekDays,
+        createdAt: habit.createdAt,
+        updatedAt: habit.updatedAt,
+      },
     };
   }
 }
-

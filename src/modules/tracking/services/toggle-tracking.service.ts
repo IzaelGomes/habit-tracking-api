@@ -1,76 +1,59 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { TrackingRepository } from '../repositories/tracking.repository';
 import { ToggleTrackingDto } from '../dto/toggle-tracking.dto';
 
 @Injectable()
 export class ToggleTrackingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private trackingRepository: TrackingRepository) {}
 
   async execute(userId: string, toggleTrackingDto: ToggleTrackingDto) {
     const { habitId, completedDate, checked } = toggleTrackingDto;
-    
-    const date = new Date(completedDate);
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
 
-    // Check if a tracking record already exists for this habit on this date
-    const existingTracking = await this.prisma.tracking.findFirst({
-      where: {
-        userId,
-        habitId,
-        completedDate: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-    });
+    const date = new Date(completedDate);
+
+    const existingTracking = await this.trackingRepository.getByIdAndDate(
+      habitId,
+      date,
+      userId,
+    );
 
     if (existingTracking) {
-      // Update existing tracking record
-      const updatedTracking = await this.prisma.tracking.update({
-        where: { id: existingTracking.id },
-        data: { checked },
-        select: {
-          id: true,
-          habitId: true,
-          completedDate: true,
-          checked: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      const updated = await this.trackingRepository.update(
+        existingTracking.id,
+        { checked },
+        userId,
+      );
 
       return {
         message: 'Tracking updated successfully',
-        tracking: updatedTracking,
-      };
-    } else {
-      // Create new tracking record
-      const newTracking = await this.prisma.tracking.create({
-        data: {
-          userId,
-          habitId,
-          completedDate: date,
-          checked,
+        tracking: {
+          id: updated.id,
+          habitId: updated.habitId,
+          completedDate: updated.completedDate,
+          checked: updated.checked,
+          createdAt: updated.createdAt,
+          updatedAt: updated.updatedAt,
         },
-        select: {
-          id: true,
-          habitId: true,
-          completedDate: true,
-          checked: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      return {
-        message: 'Tracking created successfully',
-        tracking: newTracking,
       };
     }
+
+    const created = await this.trackingRepository.create({
+      userId,
+      habitId,
+      completedDate: date,
+      checked,
+    });
+
+    return {
+      message: 'Tracking created successfully',
+      tracking: {
+        id: created.id,
+        habitId: created.habitId,
+        completedDate: created.completedDate,
+        checked: created.checked,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
+      },
+    };
   }
 }
-

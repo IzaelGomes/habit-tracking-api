@@ -3,43 +3,30 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { UserRepository } from '../repositories/user.repository';
 import { RegisterDto } from '../dto/register.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class RegisterService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private userRepository: UserRepository) {}
 
   async execute(registerDto: RegisterDto) {
     const { username, password } = registerDto;
-    console.log({ username, password });
-    // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { username },
-    });
+
+    const existingUser = await this.userRepository.findByUsername(username);
 
     if (existingUser) {
       throw new ConflictException('Username already exists');
     }
 
-    // Hash password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Create user
     try {
-      const user = await this.prisma.user.create({
-        data: {
-          username,
-          password: hashedPassword,
-        },
-        select: {
-          id: true,
-          username: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+      const user = await this.userRepository.create({
+        username,
+        password: hashedPassword,
       });
 
       return {
@@ -51,4 +38,3 @@ export class RegisterService {
     }
   }
 }
-

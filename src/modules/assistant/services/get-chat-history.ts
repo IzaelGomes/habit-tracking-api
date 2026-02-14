@@ -1,26 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { Injectable } from '@nestjs/common';
+import { AssistantRepository } from '../repositories/assistant.repository';
 
 @Injectable()
 class GetChatHistoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly assistantRepository: AssistantRepository) {}
 
   async execute(userId: string) {
-    const chatHistory = await this.prisma.assistantMessage.findMany({
-      where: { thread: { userId } },
-      orderBy: { createdAt: 'asc' },
-      select: {
-        role: true,
-        content: true,
-        createdAt: true,
-        thread: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
-    return chatHistory;
+    return this.assistantRepository.findMessagesByUserId(userId);
   }
 }
 

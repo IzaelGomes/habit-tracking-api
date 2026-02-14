@@ -21,6 +21,7 @@ export class AuthController {
 
   @Post('signin')
   async login(@Body() loginDto: LoginDto) {
+    console.log('loginDto', loginDto);
     return this.loginService.execute(loginDto);
   }
 
